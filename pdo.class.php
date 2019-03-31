@@ -1,7 +1,6 @@
 <?php
 /*
  * 用于测试的轻量级PDO
- * 密码采用crypt保存在数据库中
  * 
  * @author rustima
  * @version 0.6
@@ -36,19 +35,15 @@ class myPDO{
      * 
      */
     public function conn(){
-        if($this->hostname&&$this->user&&$this->pwd&&$this->db){
-            $this->conn = mysqli_connect($this->hostname,$this->user,$this->pwd,$this->db);
-            //             echo "111";
-            $this->conn->query("SET NAMES UTF8");  //设置编码utf8
-            var_dump($this->conn);
-            if(!mysqli_connect_errno()){
-            return $this->conn;
-            }else{
-                echo "conn error";
-                return FALSE;
-            }
+        $this->conn = new mysqli($this->hostname,$this->user,$this->pwd,$this->db);
+        //             echo "111";
+//         $this->conn->query("SET NAMES UTF8");  
+        $this->conn->set_charset("utf8");  //设置编码utf8
+        var_dump($this->conn);
+        if(!mysqli_connect_error()){
+        return $this->conn;
         }else{
-            echo "setting error:";
+            echo "conn error:".mysqli_connect_errno().":".mysqli_connect_error();
             return FALSE;
         }
         //         echo "some";
@@ -64,7 +59,6 @@ class myPDO{
      * @return boolean 成功返回TRUE，否则错误信息和返回FALSE
      */
     public function addmember($userid,$username,$userpwd,$detail){
-        $userpwd = $this->mycrypt($userpwd);
         $this->conn->query("INSERT INTO `member` (`id`, `name`, `pwd`, `detail`) VALUES ('$userid', '$username', '$userpwd', '$detail')");
         if($this->conn->error){
             echo "MYSQL添加字段时错误: ".$this->conn->error;
@@ -117,7 +111,6 @@ class myPDO{
     public function verify($userid,$userpwd){
 //         $pwd = $userpwd;
         $p = $this->conn->query("select pwd from member where id ='$userid'"); //获取密码
-//         $c_pwd = $this->mycrypt($userpwd);
         if(password_verify($userpwd, $p)){
             return TRUE;
         }else return FALSE;
@@ -153,20 +146,7 @@ class myPDO{
 //         return $arr;
 //     }
 
-    /*
-     * @加密函数
-     * 
-     * @param string $pwd 
-     * @return mixed 成功返回加密后的密码，否则FALSE
-     * 
-     */
-    private function mycrypt($pwd){
-        if($pwd){
-        $pwd = sha1($pwd);
-        $salt = substr($pwd,1,3);
-        return crypt($pwd,$salt);
-        }else return FALSE;
-    }
+
     
     public function close(){
         mysqli_close($this->conn);
